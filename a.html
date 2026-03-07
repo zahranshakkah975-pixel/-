@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>منصة المعلّم/الطالب + PDF + رسم هندسي (جاهزة لـ GitHub Pages)</title>
+<style>
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:#f7f7fb;margin:0;color:#111}
+  header{background:#4f46e5; background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;padding:10px 12px;transition:filter .2s}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px}
+  .group{display:flex;gap:6px;align-items:center;background:#ffffff22;border:1px solid #ffffff44;border-radius:12px;padding:6px}
+  .btn{padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;cursor:pointer}
+  .btn.ghost{background:transparent;color:#fff;border-color:#ffffff66}
+  .pill{padding:2px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe}
+  .debug{background:#fff;color:#111;border-radius:10px;padding:4px 8px}
+  main{max-width:1200px;margin:0 auto;padding:12px}
+  .board{position:relative;height:68vh;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff;margin-top:10px}
+  #pdf{position:absolute;inset:0;width:100%;height:100%;border:0;z-index:1}
+  #cv{position:absolute;inset:0;z-index:2;background:transparent}
+  #ov{position:absolute;inset:0;z-index:3;pointer-events:none}
+  .grid-on #cv{background-image:linear-gradient(#eee 1px,transparent 1px),linear-gradient(90deg,#eee 1px,transparent 1px);background-size:24px 24px}
+  .pdf-pass #cv{pointer-events:none}
+  .locked-student .teacher-only{display:none !important;}
+
+  /* تنبيه التضمين (Google Sites وغيره) */
+  #embedNotice{display:none;position:fixed;inset-inline:0;top:0;z-index:9999;background:#fde68a;color:#111;padding:8px 12px;border-bottom:1px solid #f59e0b}
+  #embedNotice button{margin-inline-start:8px;padding:6px 10px;border:1px solid #d97706;border-radius:8px;background:#fff;cursor:pointer}
+
+  /* نافذة اسم الطالب */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999}
+  .box{background:#fff;border-radius:12px;padding:14px;width:min(420px,92vw);display:flex;gap:8px;flex-direction:column}
+</style>
+</head>
+<body>
+<header id="hdr">
+  <div class="toolbar">
+    <!-- وضع المعلّم/الطالب -->
+    <div class="group">
+      <button class="btn ghost teacher-only" id="mTeach">وضع المعلّم</button>
+      <button class="btn ghost" id="mStud">وضع الطالب</button>
+      <span class="pill" id="modeChip">المعلّم</span>
+      <span class="pill" id="lockChip">القفل: ◻</span>
+      <span class="pill" id="pdfChip">PDF: ◻</span>
+      <span class="pill" id="penChip">القلم: يعمل</span>
+      <span class="debug" id="dbg">جاهز</span>
+    </div>
+
+    <!-- PDF -->
+    <div class="group">
+      <span>PDF:</span>
+      <button class="btn ghost teacher-only" id="upPdf">رفع</button>
+      <button class="btn ghost teacher-only" id="urlPdf">رابط</button>
+      <button class="btn ghost teacher-only" id="clrPdf">إزالة</button>
+      <label style="display:inline-flex;gap:4px;align-items:center;color:#fff">
+        <input type="checkbox" id="pdfCtl"> التحكّم بالـPDF
+      </label>
+      <button class="btn" id="fitW">ملاءمة العرض</button>
+      <button class="btn" id="fitP">ملاءمة الصفحة</button>
+      <button class="btn" id="openPdf">فتح تبويب</button>
+    </div>
+
+    <!-- الرسم -->
+    <div class="group">
+      <span>أداة:</span>
+      <select id="tool">
+        <option value="pen">قلم</option><option value="eraser">ممحاة</option>
+        <option value="line">خط</option><option value="arrow">سهم</option>
+        <option value="rect">مستطيل</option><option value="circle">دائرة</option>
+        <option value="angle">زاوية</option><option value="text">نص</option>
+      </select>
+      <input type="color" id="color" value="#1f2937">
+      <select id="size"><option>2</option><option>4</option><option selected>6</option><option>10</option><option>16</option><option>24</option></select>
+      <label style="display:inline-flex;gap:4px;align-items:center;color:#fff"><input type="checkbox" id="gridChk"> شبكة</label>
+      <label style="display:inline-flex;gap:4px;align-items:center;color:#fff"><input type="checkbox" id="snapChk"> Snap</label>
+      <button class="btn" id="clrDraw">مسح الرسم</button>
+    </div>
+
+    <!-- رابط الطلاب -->
+    <div class="group">
+      <button class="btn teacher-only" id="copyStudentLink">نسخ رابط الطلاب</button>
+    </div>
+  </div>
+</header>
+
+<!-- تنبيه التضمين -->
+<div id="embedNotice">
+  تعمل هذه المنصّة داخل إطار مضمَّن وقد لا تعمل خصائص المتصفّح المتقدمة (الكاميرا/المايك/النسخ...) بالكامل.
+  <button id="openStandalone">فتح المنصّة في تبويب مستقل</button>
+</div>
+
+<main>
+  <div class="board" id="board">
+    <iframe id="pdf" title="PDF"></iframe>
+    <canvas id="cv"></canvas>
+    <div id="ov"></div>
+  </div>
+</main>
+
+<!-- بوابة اسم الطالب -->
+<div class="modal" id="nameModal" style="display:none">
+  <div class="box">
+    <h3 style="margin:0">ادخل اسمك للدخول</h3>
+    <input id="studentNameInput" placeholder="اكتب اسمك" style="padding:8px;border:1px solid #ddd;border-radius:10px">
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" id="enterBtn">دخول</button>
+    </div>
+    <div class="muted">سيظهر اسمك للمعلم فقط.</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+window.onerror=(m,s,l,c,e)=>{ alert("⚠️ خطأ: "+m+" @"+l+":"+c); console.error(e); };
+
+/* عناصر الواجهة */
+const $=id=>document.getElementById(id);
+const hdr=$('hdr'), board=$('board'), pdf=$('pdf'), cv=$('cv'), ov=$('ov');
+const dbg=$('dbg'), modeChip=$('modeChip'), lockChip=$('lockChip'), pdfChip=$('pdfChip'), penChip=$('penChip');
+const ctx=cv.getContext('2d');
+
+/* حالة المستخدم/الصفحة */
+let user={ name: localStorage.getItem('uname')||'' };
+let state={
+  mode:'teacher', lock:false,
+  _tool:'pen', _color:'#1f2937', _size:6,
+  grid:false, snap:false,
+  pdf:{srcType:null,src:null},
+  draw:{ teacherPaths:[], studentPaths:[] },
+  shapesT:[], shapesS:[]
+};
+
+/* تنبيه التضمين (مثل Google Sites) + زر فتح مستقل */
+(function(){
+  const inIframe = (()=>{ try{ return window.self !== window.top; }catch(e){ return true; }})();
+  if(inIframe){
+    const bar=$('embedNotice'), btn=$('openStandalone');
+    bar.style.display='block';
+    btn.addEventListener('click', ()=> window.open(window.location.href, '_blank', 'noopener'));
+  }
+})();
+
+/* أدوات مساعدة */
+function gridSnap(x){ return state.snap? Math.round(x/24)*24 : x; }
+function pt(e){ const r=cv.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; return {x:gridSnap(x),y:gridSnap(y)}; }
+function pick(accept){ return new Promise((res,rej)=>{ const i=document.createElement('input'); i.type='file'; if(accept) i.accept=accept.join(','); i.onchange=()=> i.files&&i.files[0]?res(i.files[0]):rej('no file'); i.click(); }); }
+function asDataURL(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); }); }
+function dataURLtoBlob(dataurl){ const parts=dataurl.split(','), mime=parts[0].match(/:(.*?);/)[1]; const b=atob(parts[1]); let n=b.length; const u8=new Uint8Array(n); while(n--){ u8[n]=b.charCodeAt(n); } return new Blob([u8],{type:mime}); }
+
+/* قياس اللوحة */
+function fit(){ cv.width=cv.clientWidth; cv.height=cv.clientHeight; redraw(); } window.addEventListener('resize',fit); fit();
+
+/* PDF */
+function loadPDF(){
+  if(!state.pdf?.src){ pdf.src='about:blank'; return; }
+  if(state.pdf.srcType==='data'){ const url=URL.createObjectURL(dataURLtoBlob(state.pdf.src)); pdf.src=url+'#toolbar=0&navpanes=0&scrollbar=1'; }
+  else{ const base=state.pdf.src.split('#')[0]; pdf.src=base+'#toolbar=0&navpanes=0&scrollbar=1'; }
+}
+function setPdfZoom(z){
+  try{ const base=(pdf.src||'').split('#')[0]; if(!base||base==='about:blank') return;
+    pdf.src=`${base}#zoom=${encodeURIComponent(z)}&toolbar=0&navpanes=0&scrollbar=1`;
+  }catch{}
+}
+
+/* رسم + أشكال */
+let drawing=false, curPath=null, shapeTemp=null;
+function activePaths(){ return state.mode==='teacher'? state.draw.teacherPaths : state.draw.studentPaths; }
+function activeShapes(){ return state.mode==='teacher'? state.shapesT : state.shapesS; }
+
+function drawShape(shape, color, size, dashed){
+  ctx.save(); ctx.strokeStyle=color||state._color; ctx.lineWidth=size||state._size; if(dashed) ctx.setLineDash([6,6]);
+  if(shape.type==='line'||shape.type==='arrow'){
+    const {a,b}=shape; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    if(shape.type==='arrow'){ const ang=Math.atan2(b.y-a.y,b.x-a.x), L=10+(size||6);
+      ctx.beginPath(); ctx.moveTo(b.x,b.y);
+      ctx.lineTo(b.x-L*Math.cos(ang-Math.PI/6), b.y-L*Math.sin(ang-Math.PI/6));
+      ctx.moveTo(b.x,b.y);
+      ctx.lineTo(b.x-L*Math.cos(ang+Math.PI/6), b.y-L*Math.sin(ang+Math.PI/6));
+      ctx.stroke();
+    }
+  } else if(shape.type==='rect'){ const {a,b}=shape; ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y);
+  } else if(shape.type==='circle'){ const {c,r}=shape; ctx.beginPath(); ctx.arc(c.x,c.y,r,0,Math.PI*2); ctx.stroke();
+  } else if(shape.type==='angle'){ const {A,V,B}=shape;
+    ctx.beginPath(); ctx.moveTo(V.x,V.y); ctx.lineTo(A.x,A.y); ctx.moveTo(V.x,V.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+    const ang=Math.abs(Math.atan2(A.y-V.y,A.x-V.x)-Math.atan2(B.y-V.y,B.x-V.x));
+    const deg=Math.round((ang>Math.PI?(2*Math.PI-ang):ang)*180/Math.PI);
+    ctx.fillStyle='#0f172a'; ctx.font='bold 14px system-ui'; ctx.fillText(`${deg}°`, V.x+8, V.y-8);
+  } else if(shape.type==='textShape'){ const {pos,text}=shape; ctx.fillStyle=color||'#111'; ctx.font=(14+(size||6))+'px system-ui'; ctx.fillText(text||'نص', pos.x, pos.y); }
+  ctx.restore();
+}
+
+function redraw(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const drawSet=arr=>{
+    for(const p of arr){
+      ctx.save();
+      if(p.tool==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='#000'; }
+      else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=p.color; }
+      ctx.lineJoin='round'; ctx.lineCap='round'; ctx.lineWidth=p.size;
+      if(p.shape){ drawShape(p.shape,p.color,p.size,false); }
+      else{ ctx.beginPath(); p.points.forEach((q,i)=> i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)); ctx.stroke(); }
+      ctx.restore();
+    }
+  };
+  // طبقة المعلّم ثم الطالب
+  drawSet(state.draw.teacherPaths); state.shapesT.forEach(sh=>drawShape(sh,sh.color,sh.size,false));
+  drawSet(state.draw.studentPaths); state.shapesS.forEach(sh=>drawShape(sh,sh.color,sh.size,false));
+  // معاينة الشكل قيد السحب
+  if(shapeTemp) drawShape(shapeTemp, state._color, state._size, true);
+
+  penChip.textContent='القلم: '+(document.body.classList.contains('pdf-pass')?'موقوف (تحكّم PDF)':'يعمل');
+}
+
+function startDraw(e){
+  if(document.body.classList.contains('pdf-pass')) return;
+  const tool=$('tool').value; const pos=pt(e);
+  if(tool==='pen'||tool==='eraser'){
+    drawing=true; curPath={tool, color:state._color, size:+state._size, points:[pos]};
+    activePaths().push(curPath); redraw(); return;
+  }
+  if(tool==='line'||tool==='arrow'||tool==='rect'){ shapeTemp={type:tool, a:pos, b:pos}; }
+  else if(tool==='circle'){ shapeTemp={type:'circle', c:pos, r:0}; }
+  else if(tool==='angle'){
+    if(!shapeTemp){ shapeTemp={type:'angle', A:pos, V:null, B:null}; }
+    else if(!shapeTemp.V){ shapeTemp.V=pos; }
+    else if(!shapeTemp.B){ shapeTemp.B=pos; finalizeShape(); }
+  } else if(tool==='text'){
+    const t=prompt('النص:','نص'); if(t){ activeShapes().push({type:'textShape', pos:pos, text:t, color:state._color, size:+state._size}); redraw(); }
+  }
+  redraw();
+}
+function moveDraw(e){
+  if(document.body.classList.contains('pdf-pass')) return;
+  const tool=$('tool').value, pos=pt(e);
+  if(drawing && (tool==='pen'||tool==='eraser')){ curPath.points.push(pos); redraw(); return; }
+  if(shapeTemp){
+    if(shapeTemp.type==='line'||shapeTemp.type==='arrow'||shapeTemp.type==='rect'){ shapeTemp.b=pos; }
+    else if(shapeTemp.type==='circle'){ const dx=pos.x-shapeTemp.c.x, dy=pos.y-shapeTemp.c.y; shapeTemp.r=Math.hypot(dx,dy); }
+    else if(shapeTemp.type==='angle'){ if(shapeTemp.V && !shapeTemp.B) shapeTemp.B=pos; }
+    redraw();
+  }
+}
+function endDraw(){ if(drawing){ drawing=false; curPath=null; } if(shapeTemp && shapeTemp.type!=='angle'){ finalizeShape(); } }
+function finalizeShape(){ const sh=Object.assign({}, shapeTemp, {color:state._color, size:+state._size}); activeShapes().push(sh); shapeTemp=null; redraw(); }
+
+/* مسح */
+$('clrDraw').onclick=()=>{ if(confirm('مسح رسم هذه الجلسة؟')){ if(state.mode==='teacher'){ state.draw.teacherPaths=[]; state.shapesT=[]; } else { state.draw.studentPaths=[]; state.shapesS=[]; } redraw(); } };
+
+/* تبديل إعدادات الرسم */
+$('tool').onchange=e=> state._tool=e.target.value;
+$('color').oninput=e=> state._color=e.target.value;
+$('size').onchange=e=> state._size=+e.target.value;
+$('gridChk').onchange=e=>{ state.grid=e.target.checked; document.body.classList.toggle('grid-on', e.target.checked); };
+$('snapChk').onchange=e=> state.snap=e.target.checked;
+
+/* PDF أزرار */
+$('upPdf').onclick=async()=>{ if(state.lock&&state.mode==='student') return; try{ const f=await pick(['application/pdf']); const data=await asDataURL(f); state.pdf={srcType:'data',src:data}; loadPDF(); }catch{} };
+$('urlPdf').onclick=()=>{ if(state.lock&&state.mode==='student') return; const u=prompt('رابط PDF:','https://'); if(!u) return; state.pdf={srcType:'url',src:u.trim()}; loadPDF(); };
+$('clrPdf').onclick=()=>{ if(state.lock&&state.mode==='student') return; state.pdf={srcType:null,src:null}; loadPDF(); };
+$('pdfCtl').onchange=()=>{ document.body.classList.toggle('pdf-pass', $('pdfCtl').checked); pdfChip.textContent='PDF: '+($('pdfCtl').checked?'■':'◻'); penChip.textContent='القلم: '+(document.body.classList.contains('pdf-pass')?'موقوف (تحكّم PDF)':'يعمل'); };
+$('fitW').onclick=()=> setPdfZoom('page-width');
+$('fitP').onclick=()=> setPdfZoom('page-fit');
+$('openPdf').onclick=()=>{ if(!state.pdf?.src){ alert('لا يوجد PDF'); return; } const href=(state.pdf.srcType==='data')? URL.createObjectURL(dataURLtoBlob(state.pdf.src)) : state.pdf.src; window.open(href,'_blank','noopener'); };
+
+/* وضع المعلم/الطالب + بوابة الاسم */
+$('mTeach').onclick=()=>{ if(state.lock){ alert('🔒 رابط الطلاب مقفول. لا يمكن التحويل لوضع المعلّم.'); return; } state.mode='teacher'; modeChip.textContent='المعلّم'; document.body.classList.remove('locked-student'); redraw(); };
+$('mStud').onclick=()=>{ state.mode='student'; modeChip.textContent='الطالب'; if(state.lock) document.body.classList.add('locked-student'); maybeAskName(); redraw(); };
+function maybeAskName(){ if(state.mode!=='student') return; if(!user.name){ $('nameModal').style.display='flex'; } }
+$('enterBtn').onclick=()=>{ const v=$('studentNameInput').value.trim(); if(!v){ alert('اكتب الاسم'); return; } user.name=v; localStorage.setItem('uname',v); $('nameModal').style.display='none'; };
+
+/* Snapshot: نسخ رابط الطلاب */
+function encodeStateForStudents(){
+  const publish={ pdf:state.pdf, draw:{teacherPaths:state.draw.teacherPaths}, shapesT:state.shapesT };
+  const base64=btoa(unescape(encodeURIComponent(JSON.stringify(publish))));
+  const base = location.origin + location.pathname;
+  return `${base}?mode=student&lock=1#data=${encodeURIComponent(base64)}`;
+}
+$('copyStudentLink').onclick=async()=>{
+  const link=encodeStateForStudents();
+  try{ await navigator.clipboard.writeText(link); dbg.textContent='تم نسخ رابط الطلاب'; hdr.style.filter='hue-rotate(35deg)'; setTimeout(()=>hdr.style.filter='',200); }
+  catch{ prompt('انسخ الرابط:', link); }
+};
+
+/* تحميل نسخة منشورة من الرابط */
+function tryLoadPublishedFromURL(){
+  try{
+    const u=new URL(location.href);
+    if(u.searchParams.get('mode')==='student') state.mode='student';
+    if(u.searchParams.get('lock')==='1') state.lock=true;
+    const m=(u.hash||'').match(/#data=([^]+)/);
+    if(m&&m[1]){
+      const decoded=decodeURIComponent(m[1]);
+      const pub=JSON.parse(decodeURIComponent(escape(atob(decoded))));
+      state.pdf = pub.pdf||{srcType:null,src:null};
+      state.draw.teacherPaths = pub.draw?.teacherPaths||[];
+      state.shapesT = pub.shapesT||[];
+      state.draw.studentPaths=[]; state.shapesS=[];
+    }
+  }catch(e){ console.warn(e); }
+}
+
+/* تشغيل */
+function boot(){
+  tryLoadPublishedFromURL();
+  // ضبط واجهة
+  modeChip.textContent=(state.mode==='teacher'?'المعلّم':'الطالب');
+  lockChip.textContent='القفل: '+(state.lock?'■':'◻');
+  if(state.lock&&state.mode==='student') document.body.classList.add('locked-student');
+  loadPDF(); fit(); redraw();
+  if(state.mode==='student') maybeAskName();
+}
+boot();
+</script>
+</body>
+</html>
