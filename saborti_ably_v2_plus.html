@@ -1,0 +1,496 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>سبورتي — بث مباشر (إصدار محسّن + سجل درجات)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0d1117;--s1:#161b22;--s2:#21262d;--bd:#30363d;--blue:#58a6ff;--pu:#bc8cff;--gr:#3fb950;--rd:#f85149;--ye:#d29922;--tx:#e6edf3;--mu:#7d8590;--wb:#f8f9fa}
+  html,body{height:100%;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);overflow:hidden}
+  .scr{display:none;width:100vw;height:100vh;flex-direction:column}
+  .scr.on{display:flex}
+  /* setup */
+  #s-setup{align-items:center;justify-content:center;background:radial-gradient(ellipse 80% 60% at 50% 0%,#1a2744,var(--bg))}
+  .setup-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;max-width:680px;width:94%;text-align:center}
+  .big-icon{font-size:68px;animation:bob 3s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .setup-title{font-size:38px;font-weight:900;background:linear-gradient(135deg,#fff,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .setup-sub{color:var(--mu);font-size:14px}
+  .card{background:var(--s1);border:1px solid var(--bd);border-radius:18px;padding:24px 26px;width:100%}
+  .card h2{font-size:18px;font-weight:800;margin-bottom:6px}
+  .card p{color:var(--mu);font-size:13px;margin-bottom:12px;line-height:1.7}
+  .inp{width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:11px;padding:12px 14px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--tx);outline:none;transition:.2s;direction:ltr;text-align:left}
+  .btn{width:100%;padding:12px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:.25s;margin-top:8px}
+  .btn.bl{background:linear-gradient(135deg,var(--blue),#1f6feb);color:#fff}
+  .btn.gr{background:linear-gradient(135deg,var(--gr),#15803d);color:#fff}
+  .btn.dk{background:var(--s2);color:var(--mu);border:1px solid var(--bd)}
+  .role-cards{display:flex;gap:12px;width:100%;flex-wrap:wrap}
+  .role-card{flex:1;min-width:150px;background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:20px 18px;cursor:pointer;transition:all .25s;text-align:center}
+  .role-card:hover{transform:translateY(-4px);border-color:var(--blue);box-shadow:0 12px 36px rgba(88,166,255,.15)}
+  .role-card .ic{font-size:36px;display:block;margin-bottom:8px}
+  .role-card h2{font-size:16px;font-weight:800;margin-bottom:3px}
+
+  /* header */
+  .hdr{background:var(--s1);border-bottom:1px solid var(--bd);height:50px;display:flex;align-items:center;gap:7px;padding:0 10px;flex-shrink:0;overflow-x:auto}
+  .hb{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:transparent;color:var(--tx);font-size:12px;cursor:pointer;transition:.2s;white-space:nowrap}
+  .hb:hover{border-color:var(--blue);color:var(--blue)}
+  .badge{background:var(--gr);color:#fff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:7px}
+  .hsep{width:1px;height:26px;background:var(--bd)}
+  .rtag{display:flex;align-items:center;gap:5px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800}
+  .rtag span{color:var(--blue);font-size:13px;letter-spacing:2px}
+  .lpill{display:flex;align-items:center;gap:5px;background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.3);color:var(--gr);padding:3px 10px;border-radius:18px;font-size:11px}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 1s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+  /* body */
+  .body{display:flex;flex:1;overflow:hidden;min-height:0}
+  .sp{width:260px;background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
+  .sp-hdr{padding:10px 12px;border-bottom:1px solid var(--bd);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:space-between}
+  .slist{overflow-y:auto;flex:1}
+  .si{padding:9px 10px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px}
+  .sav{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--pu));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+  .sn{font-size:12px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ss{font-size:10px;color:var(--mu)}
+  .grade-row{display:flex;gap:6px;margin-top:6px}
+  .grade-row input{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:6px 8px;color:var(--tx);font-size:12px}
+  .grade-row button{padding:6px 8px;border:none;border-radius:8px;background:var(--gr);color:#fff;font-size:11px;cursor:pointer}
+
+  .ca{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+  .tb{background:var(--s1);border-bottom:1px solid var(--bd);padding:4px 8px;display:flex;align-items:center;gap:3px;flex-shrink:0;overflow-x:auto}
+  .tb2{width:32px;height:32px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--tx);cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .tb2.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .tsep{width:1px;height:24px;background:var(--bd);margin:0 2px}
+  .cb{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+  .cb.on{border-color:#fff;transform:scale(1.2)}
+  .sz{width:66px;accent-color:var(--blue)}
+  .cvw{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:flex-start;background:#1c2128;padding:14px}
+  .cvc{position:relative;display:inline-block}
+  #cv,#scv{background:var(--wb);cursor:crosshair;touch-action:none;display:block;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+  #txov,#stxov{position:absolute;display:none;z-index:25}
+  #txta,#stxta{background:rgba(255,255,248,.96);border:2px dashed var(--blue);border-radius:8px;padding:8px 12px;font-size:20px;color:#000;min-width:160px;min-height:52px;resize:both;outline:none}
+
+  .bbar{width:160px;background:var(--s1);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+  .bbtit{padding:8px 10px;font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--bd)}
+  .bth{margin:6px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:.2s;position:relative;aspect-ratio:4/2.5;background:var(--wb)}
+  .bth.cur{border-color:var(--blue)}
+  .bth canvas{width:100%;height:100%;display:block}
+  .bth .bn{position:absolute;bottom:2px;right:4px;font-size:9px;font-weight:800;color:var(--mu);background:rgba(255,255,255,.85);padding:1px 4px;border-radius:4px}
+  .bth .bdel{position:absolute;top:2px;left:2px;background:var(--rd);border:none;color:#fff;width:15px;height:15px;border-radius:50%;cursor:pointer;font-size:9px;display:none}
+  .bth:hover .bdel{display:flex}
+  .badd{margin:6px;padding:8px;background:transparent;border:2px dashed var(--bd);border-radius:8px;color:var(--mu);font-size:11px;cursor:pointer}
+
+  /* overlays & modals */
+  .ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center}
+  .ov.on{display:flex}
+  .modal{background:var(--s1);border:1px solid var(--bd);border-radius:18px;padding:20px 22px;max-width:520px;width:94%;max-height:88vh;overflow-y:auto}
+  .modal h3{font-size:18px;font-weight:900;margin-bottom:10px}
+  .fi{width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:9px;padding:10px 12px;font-size:14px;color:var(--tx);outline:none}
+  .mb{padding:10px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;transition:.2s}
+  .mb.ok{background:var(--blue);color:#fff}
+  .mb.no{background:var(--s2);color:var(--tx);border:1px solid var(--bd)}
+
+  .notif{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;transition:.3s;z-index:999;box-shadow:0 6px 24px rgba(0,0,0,.4);pointer-events:none;white-space:nowrap}
+  .notif.up{transform:translateX(-50%) translateY(0)}
+  .notif.g{border-color:var(--gr);color:var(--gr)}
+  .notif.b{border-color:var(--blue);color:var(--blue)}
+  .notif.r{border-color:var(--rd);color:var(--rd)}
+
+  /* geometry tools */
+  .tool-pill{display:flex;gap:6px;align-items:center;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:4px 8px}
+  .overlay{position:absolute;z-index:40;cursor:move}
+  .overlay .wcls{position:absolute;top:-7px;left:-7px;background:var(--rd);border:none;color:#fff;width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center}
+  .lock-mask{position:absolute;inset:0;background:rgba(0,0,0,.45);color:#fff;display:none;align-items:center;justify-content:center;font-weight:900;font-size:22px;border-radius:6px;z-index:50}
+
+  @media(max-width:700px){.bbar{width:90px}.sp{width:0!important;border:none!important}}
+</style>
+</head>
+<body>
+<div class="notif" id="notif"></div>
+
+<!-- SETUP -->
+<div class="scr on" id="s-setup">
+  <div class="setup-wrap">
+    <span class="big-icon">🎨</span>
+    <h1 class="setup-title">سبورتي — بث مباشر عبر Ably</h1>
+    <p class="setup-sub">دخول بالاسم، حضور لحظي، استلام أعمال، سجل درجات وتصدير Excel</p>
+
+    <div class="card" id="card-key">
+      <h2>🔑 مفتاح Ably</h2>
+      <p>الصق المفتاح المقيّد (publish + subscribe + presence). يُحفظ محليًا فقط.</p>
+      <input class="inp" id="ably-key" placeholder="xxxxxx.xxxxx:xxxxxxxxxxxxxxxx" />
+      <button class="btn bl" onclick="saveAblyKey()">✅ حفظ وبدء</button>
+      <button class="btn dk" onclick="useSavedKey()">▶ استخدام المفتاح المحفوظ</button>
+    </div>
+
+    <div id="role-section" style="display:none;width:100%">
+      <div class="role-cards">
+        <div class="role-card" onclick="goTeacher()"><span class="ic">👨‍🏫</span><h2>دخول المعلم</h2><p>أنشئ غرفة وابدأ الدرس</p></div>
+        <div class="role-card" onclick="goJoin()"><span class="ic">👨‍🎓</span><h2>دخول الطالب</h2><p>أدخل اسمك وانضم</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TEACHER CREATE ROOM -->
+<div class="ov" id="ov-teacher">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <div style="font-size:46px;margin-bottom:8px">🏫</div>
+    <h3>إنشاء غرفة الدرس</h3>
+    <input class="fi" id="tname" placeholder="اسمك (أستاذ ...)" onkeydown="if(event.key==='Enter')createRoom()" />
+    <button class="mb ok" id="create-room-btn" style="width:100%;margin-top:8px" onclick="createRoom()">🚀 إنشاء الغرفة</button>
+    <div class="card" id="room-info" style="display:none;margin-top:10px">
+      <div style="font-size:12px;color:var(--mu);margin-bottom:4px">كود الغرفة</div>
+      <div id="rcode" style="font-size:36px;font-weight:900;color:var(--blue);letter-spacing:6px">----</div>
+      <div style="font-size:12px;color:var(--mu);margin-top:6px">رابط الدعوة</div>
+      <div id="rlink" style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px;direction:ltr;text-align:left;font-size:12px;word-break:break-all"></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="mb ok" style="flex:1" onclick="copyLink()">📋 نسخ الرابط</button><button class="mb" style="flex:1;background:var(--gr);color:#fff" onclick="enterTeacher()">▶ دخول السبورة</button></div>
+    </div>
+    <button class="mb no" style="width:100%;margin-top:8px" onclick="closeOv('ov-teacher')">إلغاء</button>
+  </div>
+</div>
+
+<!-- STUDENT JOIN -->
+<div class="ov" id="ov-join">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div style="font-size:46px;margin-bottom:10px">🎓</div>
+    <h3>انضم للدرس</h3>
+    <input class="fi" id="sname" placeholder="اسمك الكامل" style="margin-bottom:8px" />
+    <input class="fi" id="scode" placeholder="كود الغرفة (4 أرقام)" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter')joinRoom()" />
+    <button class="mb ok" id="join-btn" style="width:100%;margin-top:8px" onclick="joinRoom()">▶ دخول الفصل</button>
+    <button class="mb no" style="width:100%;margin-top:6px" onclick="closeOv('ov-join')">إلغاء</button>
+  </div>
+</div>
+
+<!-- TEACHER SCREEN -->
+<div class="scr" id="s-teacher">
+  <div class="hdr">
+    <button class="hb" onclick="toggleSP()">👥 <span id="hcnt" class="badge">0</span></button>
+    <div class="hsep"></div>
+    <button class="hb" onclick="broadcastBoard()">📤 أرسل للطلاب</button>
+    <button class="hb" onclick="openOv('ov-pdf')">📄 PDF</button>
+    <button class="hb" onclick="document.getElementById('imginp').click()">🖼️ صورة</button>
+    <div class="hsep"></div>
+    <div class="tool-pill">
+      <span>🧮</span>
+      <button class="hb" onclick="openCalc()">آلة حاسبة</button>
+      <button class="hb" onclick="toggleRuler()">مسطرة</button>
+      <button class="hb" onclick="toggleProtractor()">منقلة</button>
+      <button class="hb" onclick="toggleGrid()">شبكة</button>
+    </div>
+    <div class="hsep"></div>
+    <div class="tool-pill">
+      <span>⏱️</span>
+      <button class="hb" onclick="openOv('ov-timer')">مؤقت</button>
+      <button class="hb" onclick="lockAll()">🔒 إقفال</button>
+      <button class="hb" onclick="unlockAll()">🔓 فتح</button>
+    </div>
+    <div class="hsep"></div>
+    <button class="hb" onclick="undoT()">↩</button>
+    <button class="hb" onclick="redoT()">↪</button>
+    <button class="hb" onclick="clearBoard()">🗑️</button>
+    <button class="hb" onclick="saveBoard()">💾</button>
+    <div class="hsep"></div>
+    <div class="rtag">🔑 <span id="hroom">----</span></div>
+    <div class="lpill" style="margin-right:auto"><div class="dot"></div>مباشر</div>
+    <button class="hb" onclick="exportExcel()">📊 تصدير Excel</button>
+  </div>
+  <div class="body">
+    <div class="sp" id="sp">
+      <div class="sp-hdr"><span>👥 الطلاب</span><span class="badge" id="spbadge">0</span></div>
+      <div class="slist" id="slist"><div style="padding:14px;color:var(--mu);font-size:12px">في انتظار الطلاب...</div></div>
+    </div>
+    <div class="ca">
+      <div class="tb" id="tb">
+        <button class="tb2 on" id="tt-pen" onclick="setTool('pen')">✏️</button>
+        <button class="tb2" id="tt-marker" onclick="setTool('marker')">🖊️</button>
+        <button class="tb2" id="tt-eraser" onclick="setTool('eraser')">⬜</button>
+        <button class="tb2" id="tt-text" onclick="setTool('text')">T</button>
+        <button class="tb2" id="tt-line" onclick="setTool('line')">╱</button>
+        <button class="tb2" id="tt-rect" onclick="setTool('rect')">▭</button>
+        <button class="tb2" id="tt-circle" onclick="setTool('circle')">○</button>
+        <button class="tb2" id="tt-arrow" onclick="setTool('arrow')">↗</button>
+        <div class="tsep"></div>
+        <div class="cb on" style="background:#222" onclick="setCol('#222222')" data-c="#222222"></div>
+        <div class="cb" style="background:#ef4444" onclick="setCol('#ef4444')" data-c="#ef4444"></div>
+        <div class="cb" style="background:#3b82f6" onclick="setCol('#3b82f6')" data-c="#3b82f6"></div>
+        <div class="cb" style="background:#22c55e" onclick="setCol('#22c55e')" data-c="#22c55e"></div>
+        <div class="cb" style="background:#f59e0b" onclick="setCol('#f59e0b')" data-c="#f59e0b"></div>
+        <div class="cb" style="background:#a855f7" onclick="setCol('#a855f7')" data-c="#a855f7"></div>
+        <div class="cb" style="background:#fff;border:1.5px solid #999" onclick="setCol('#ffffff')" data-c="#ffffff"></div>
+        <input type="color" value="#222222" oninput="setCol(this.value)" />
+        <div class="tsep"></div>
+        <input type="range" class="sz" min="1" max="50" value="4" oninput="setSz(this.value)" /><span id="szn" style="font-size:11px;color:var(--mu);min-width:16px">4</span>
+      </div>
+      <div class="cvw">
+        <div class="cvc" id="cvc" style="position:relative">
+          <div class="lock-mask" id="lock-mask">⏰ انتهى الوقت — السبورة مقفلة</div>
+          <canvas id="cv" width="1280" height="720"></canvas>
+          <div id="txov"><textarea id="txta" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();commitTxt()}"></textarea></div>
+
+          <!-- Geometry overlays -->
+          <div class="overlay" id="ruler-ov" style="display:none;left:40px;top:40px">
+            <button class="wcls" onclick="document.getElementById('ruler-ov').style.display='none'">✕</button>
+            <canvas id="ruler-cv" width="600" height="28"></canvas>
+          </div>
+          <div class="overlay" id="prot-ov" style="display:none;left:80px;top:120px">
+            <button class="wcls" onclick="document.getElementById('prot-ov').style.display='none'">✕</button>
+            <canvas id="prot-cv" width="320" height="160"></canvas>
+          </div>
+          <canvas id="grid-ov" width="1280" height="720" style="display:none;position:absolute;left:0;top:0;pointer-events:none;opacity:.35;z-index:30"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="bbar">
+      <div class="bbtit">السبورات</div>
+      <div id="blist"></div>
+      <button class="badd" onclick="addBoard()">＋ جديدة</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT SCREEN -->
+<div class="scr" id="s-student">
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:6px;font-weight:800;font-size:14px">🎓 <span id="sdname">—</span></div>
+    <div class="hsep"></div>
+    <div class="rtag">🔑 <span id="srdisp">----</span></div>
+    <div class="lpill"><div class="dot"></div>متصل</div>
+    <div style="margin-right:auto"></div>
+    <div style="font-weight:900">🎨 سبورتي</div>
+  </div>
+  <div class="body">
+    <div class="ca">
+      <div class="tb">
+        <button class="tb2 on" id="st-pen" onclick="setST('pen')">✏️</button>
+        <button class="tb2" id="st-marker" onclick="setST('marker')">🖊️</button>
+        <button class="tb2" id="st-eraser" onclick="setST('eraser')">⬜</button>
+        <button class="tb2" id="st-text" onclick="setST('text')">T</button>
+        <div class="tsep"></div>
+        <div class="cb on" style="background:#222" onclick="setSC('#222222')" data-c="#222222"></div>
+        <div class="cb" style="background:#ef4444" onclick="setSC('#ef4444')" data-c="#ef4444"></div>
+        <div class="cb" style="background:#3b82f6" onclick="setSC('#3b82f6')" data-c="#3b82f6"></div>
+        <div class="cb" style="background:#22c55e" onclick="setSC('#22c55e')" data-c="#22c55e"></div>
+        <div class="cb" style="background:#f59e0b" onclick="setSC('#f59e0b')" data-c="#f59e0b"></div>
+        <input type="color" value="#222222" oninput="setSC(this.value)" />
+        <div class="tsep"></div>
+        <input type="range" class="sz" min="1" max="50" value="4" oninput="setSSZ(this.value)" />
+        <div class="tsep"></div>
+        <button class="tb2" onclick="studentUndo()">↩</button>
+        <button class="hb" onclick="document.getElementById('simginp').click()">🖼️</button>
+      </div>
+      <div class="cvw">
+        <div style="position:relative;display:inline-block" id="scvc">
+          <div class="lock-mask" id="s-lock-mask">⏰ انتهى الوقت — السبورة مقفلة</div>
+          <canvas id="scv" width="1280" height="720"></canvas>
+          <div id="stxov"><textarea id="stxta" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();commitSTxt()}"></textarea></div>
+        </div>
+      </div>
+      <div style="padding:8px 12px;background:var(--s1);border-top:1px solid var(--bd);display:flex;gap:8px;align-items:center">
+        <p style="font-size:11px;color:var(--mu);flex:1">ارسم إجابتك ثم اضغط إرسال</p>
+        <button class="mb ok" style="background:var(--gr)" onclick="submitWork()">✅ إرسال الإجابة</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PDF -->
+<div class="ov" id="ov-pdf">
+  <div class="modal" style="text-align:center">
+    <h3>📄 رفع PDF</h3>
+    <p style="color:var(--mu);font-size:13px;margin-bottom:10px">كل صفحة ستصبح سبورة منفصلة</p>
+    <input type="file" id="pdfinp" accept=".pdf" style="display:none" onchange="handlePDF(event)" />
+    <button class="mb ok" style="width:100%" onclick="document.getElementById('pdfinp').click()">📁 اختر ملف PDF</button>
+    <div id="pdfprog" style="color:var(--mu);font-size:12px;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- TIMER -->
+<div class="ov" id="ov-timer">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <h3>⏱️ مؤقت الحصة</h3>
+    <div style="display:flex;gap:8px"><input class="fi" id="tm-min" type="number" min="0" value="1" placeholder="دقائق"><input class="fi" id="tm-sec" type="number" min="0" max="59" value="0" placeholder="ثوانٍ"></div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="mb ok" style="flex:1" onclick="startTimer()">▶ ابدأ ويُقفل عند الانتهاء</button><button class="mb no" style="flex:1" onclick="closeOv('ov-timer')">إلغاء</button></div>
+    <div id="tm-show" style="margin-top:10px;color:var(--ye);font-weight:900"></div>
+  </div>
+</div>
+
+<!-- CALC -->
+<div class="ov" id="ov-calc">
+  <div class="modal" style="max-width:340px;text-align:center">
+    <h3>🧮 آلة حاسبة علمية مبسطة</h3>
+    <input class="fi" id="calc-inp" placeholder="اكتب تعبيرًا: 2*sin(30*Math.PI/180) + sqrt(9)" />
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">
+      <button class="mb no" onclick="insCalc('sin(')">sin</button>
+      <button class="mb no" onclick="insCalc('cos(')">cos</button>
+      <button class="mb no" onclick="insCalc('tan(')">tan</button>
+      <button class="mb no" onclick="insCalc('sqrt(')">√</button>
+      <button class="mb no" onclick="insCalc('^')">^</button>
+      <button class="mb no" onclick="insCalc('(')">(</button>
+      <button class="mb no" onclick="insCalc(')')">)</button>
+      <button class="mb no" onclick="insCalc('/')">/</button>
+      <button class="mb no" onclick="insCalc('7')">7</button>
+      <button class="mb no" onclick="insCalc('8')">8</button>
+      <button class="mb no" onclick="insCalc('9')">9</button>
+      <button class="mb no" onclick="insCalc('*')">*</button>
+      <button class="mb no" onclick="insCalc('4')">4</button>
+      <button class="mb no" onclick="insCalc('5')">5</button>
+      <button class="mb no" onclick="insCalc('6')">6</button>
+      <button class="mb no" onclick="insCalc('-')">-</button>
+      <button class="mb no" onclick="insCalc('1')">1</button>
+      <button class="mb no" onclick="insCalc('2')">2</button>
+      <button class="mb no" onclick="insCalc('3')">3</button>
+      <button class="mb no" onclick="insCalc('+')">+</button>
+      <button class="mb no" onclick="insCalc('0')">0</button>
+      <button class="mb no" onclick="insCalc('.')">.</button>
+      <button class="mb no" onclick="document.getElementById('calc-inp').value=''">مسح</button>
+      <button class="mb ok" onclick="evalCalc()">=</button>
+    </div>
+    <button class="mb no" style="width:100%;margin-top:8px" onclick="closeOv('ov-calc')">إغلاق</button>
+  </div>
+</div>
+
+<input type="file" id="imginp" accept="image/*,capture=camera" style="display:none" onchange="handleImg(event)" />
+<input type="file" id="simginp" accept="image/*,capture=camera" style="display:none" onchange="handleSImg(event)" />
+
+<!-- SDKs -->
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- SheetJS for Excel export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+const $ = id => document.getElementById(id);
+let ROOM='', ROLE='', MY_NAME='';
+let ably=null, channel=null;
+let cv, ctx, scv, sctx, ssnap=null, lock=false, sLock=false;
+const T={tool:'pen', col:'#222222', sz:4, drawing:false, sx:0, sy:0, snap:null, boards:[{name:'سبورة 1', data:null, bg:'#f8f9fa'}], curB:0, hist:[[]], redo:[[]]};
+const S={tool:'pen', col:'#222222', sz:4, drawing:false, sx:0, sy:0, hist:[], redo:[]};
+const studentMap=new Map(); // name => {online, work, grade, submittedAt}
+
+window.onload=()=>{
+  cv=$('cv'); ctx=cv.getContext('2d'); scv=$('scv'); sctx=scv.getContext('2d');
+  fill(ctx,cv,'#f8f9fa'); fill(sctx,scv,'#f8f9fa');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  ['mousedown','mousemove','mouseup','mouseleave'].forEach(ev=>cv.addEventListener(ev,e=>tCanvasEvent(ev,e)));
+  cv.addEventListener('touchstart', e=>{e.preventDefault(); tCanvasEvent('mousedown', e.touches[0]);},{passive:false});
+  cv.addEventListener('touchmove', e=>{e.preventDefault(); tCanvasEvent('mousemove', e.touches[0]);},{passive:false});
+  cv.addEventListener('touchend', e=>tCanvasEvent('mouseup', e));
+  ['mousedown','mousemove','mouseup','mouseleave'].forEach(ev=>scv.addEventListener(ev,e=>sCanvasEvent(ev,e)));
+  scv.addEventListener('touchstart', e=>{e.preventDefault(); sCanvasEvent('mousedown', e.touches[0]);},{passive:false});
+  scv.addEventListener('touchmove', e=>{e.preventDefault(); sCanvasEvent('mousemove', e.touches[0]);},{passive:false});
+  scv.addEventListener('touchend', e=>sCanvasEvent('mouseup', e));
+  const p = new URLSearchParams(location.search); if(p.get('room')) $('scode').value=p.get('room');
+  drawRuler(); drawProtractor(); drawGrid();
+}
+
+// Ably key mgmt
+function saveAblyKey(){const key=$('ably-key').value.trim(); if(!key||!key.includes(':')){notif('أدخل مفتاح Ably صحيحًا','r'); return;} localStorage.setItem('ably_key', key); $('card-key').style.display='none'; $('role-section').style.display='block'; notif('✅ تم الحفظ — اختر الدور','g');}
+function useSavedKey(){const k=localStorage.getItem('ably_key'); if(!k){notif('لا يوجد مفتاح محفوظ','r'); return;} $('ably-key').value=k; $('card-key').style.display='none'; $('role-section').style.display='block';}
+async function connectAbly(clientId){const key=localStorage.getItem('ably_key'); if(!key){notif('ضع المفتاح أولاً','r'); return null;} try{ably=new Ably.Realtime({key, clientId}); await ably.connection.once('connected'); return ably;}catch(e){notif('فشل الاتصال: '+e.message,'r'); return null;}}
+function makeChannel(){channel=ably.channels.get('classroom-'+ROOM);} 
+
+function genCode(){return String(Math.floor(1000+Math.random()*9000));}
+function goTeacher(){openOv('ov-teacher'); $('tname').focus();}
+function goJoin(){openOv('ov-join'); $('sname').focus();}
+async function createRoom(){const name=$('tname').value.trim(); if(!name){notif('أدخل اسمك','r'); return;} MY_NAME=name; ROLE='teacher'; ROOM=genCode(); const btn=$('create-room-btn'); btn.disabled=true; btn.textContent='⏳ ...'; const ok=await connectAbly('T:'+name); if(!ok){btn.disabled=false; btn.textContent='🚀 إنشاء الغرفة'; return;} makeChannel(); try{await channel.presence.enter({name:MY_NAME, role:'teacher'});}catch{} $('rcode').textContent=ROOM; const url=location.href.split('?')[0]+'?room='+ROOM; $('rlink').textContent=url; $('room-info').style.display='block'; btn.disabled=false; btn.textContent='🚀 إنشاء الغرفة'; notif('✅ غرفة '+ROOM+' جاهزة','g');}
+function copyLink(){const url=location.href.split('?')[0]+'?room='+ROOM; navigator.clipboard.writeText(url).then(()=>notif('تم النسخ ✅','g')).catch(()=>{const ta=document.createElement('textarea'); ta.value=url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); notif('تم النسخ ✅','g');});}
+function enterTeacher(){if(!ROOM)return; closeOv('ov-teacher'); go('s-teacher'); $('hroom').textContent=ROOM; renderBoards(); wireTeacherRealtime();}
+
+async function joinRoom(){const name=$('sname').value.trim(); const code=$('scode').value.trim(); if(!name){notif('أدخل اسمك','r'); return;} if(code.length!==4){notif('الكود 4 أرقام','r'); return;} MY_NAME=name; ROOM=code; ROLE='student'; const btn=$('join-btn'); btn.disabled=true; btn.textContent='⏳ ...'; const ok=await connectAbly('S:'+name); if(!ok){btn.disabled=false; btn.textContent='▶ دخول الفصل'; return;} makeChannel(); try{await channel.presence.enter({name:MY_NAME, role:'student'});}catch{} $('sdname').textContent=name; $('srdisp').textContent=ROOM; closeOv('ov-join'); go('s-student'); wireStudentRealtime(); notif('مرحبًا '+name,'b'); btn.disabled=false; btn.textContent='▶ دخول الفصل';}
+
+// Realtime (Teacher)
+function wireTeacherRealtime(){if(!channel)return; channel.presence.subscribe(()=>updatePresenceList()); updatePresenceList(); channel.subscribe('work', (msg)=>{const d=msg.data||{}; if(!d.name) return; const rec=studentMap.get(d.name)||{online:true,work:null,grade:null,submittedAt:null}; rec.work=d.work||null; rec.submittedAt=new Date(d.ts||Date.now()).toLocaleString(); rec.online=true; studentMap.set(d.name, rec); drawStudentList(); notif('📥 إجابة: '+d.name,'b');}); channel.subscribe('lock', (msg)=>{const d=msg.data||{}; lock=!!d.on; $('lock-mask').style.display=lock?'flex':'none';});}
+async function updatePresenceList(){try{const members=await channel.presence.get(); const online=new Set(); members.forEach(m=>{if(m?.data?.name){online.add(m.data.name); const rec=studentMap.get(m.data.name)||{online:false,work:null,grade:null,submittedAt:null}; rec.online=true; studentMap.set(m.data.name, rec);}}); for(const [nm, rec] of studentMap){ if(!online.has(nm)){rec.online=false; studentMap.set(nm, rec);} } }catch{} drawStudentList();}
+function drawStudentList(){const arr=[...studentMap.entries()].map(([name,rec])=>({name,...rec})).sort((a,b)=>a.name.localeCompare(b.name,'ar')); $('hcnt').textContent=arr.length; $('spbadge').textContent=arr.length; const el=$('slist'); if(!arr.length){el.innerHTML='<div style="padding:14px;color:var(--mu);font-size:12px">في انتظار الطلاب...</div>'; return;} el.innerHTML=arr.map(s=>`<div class="si"><div class="sav">${(s.name||'?').charAt(0)}</div><div style="flex:1;min-width:0"><div class="sn">${s.name}</div><div class="ss ${s.work?'':'no'}">${s.online?'متصل':'غير متصل'} ${s.work?'— ✅ أجاب':''}</div><div class="grade-row"><input id="g_${s.name.replace(/[^\w؀-ۿ]/g,'_')}" placeholder="درجة" value="${s.grade??''}" /><button onclick="saveGrade('${s.name.replace(/'/g,"\'")}')">حفظ</button>${s.work?`<button style="background:var(--blue)" onclick="viewWork('${s.name.replace(/'/g,"\'")}')">👁 عرض</button>`:''}</div></div></div>`).join('');}
+function saveGrade(name){const id='g_'+name.replace(/[^\w؀-ۿ]/g,'_'); const v=$(id).value.trim(); const n=parseFloat(v); const rec=studentMap.get(name)||{online:false}; rec.grade=isNaN(n)?v:n; studentMap.set(name, rec); notif('تم حفظ درجة '+name,'g');}
+function viewWork(name){const rec=studentMap.get(name); if(!rec?.work){notif('لا يوجد عمل','b');return;} const w=window.open('about:blank','_blank','noopener'); w.document.write(`<title>عمل الطالب: ${name}</title><img src="${rec.work}" style="max-width:100%;display:block;margin:auto"/>`);}
+
+// Realtime (Student)
+function wireStudentRealtime(){if(!channel)return; channel.subscribe('board',(msg)=>{const d=msg.data||{}; if(!d.img)return; const im=new Image(); im.onload=()=>{sctx.clearRect(0,0,scv.width,scv.height); sctx.drawImage(im,0,0,scv.width,scv.height)}; im.src=d.img;}); channel.subscribe('lock',(msg)=>{const d=msg.data||{}; sLock=!!d.on; $('s-lock-mask').style.display=sLock?'flex':'none';});}
+
+// Locking
+async function lockAll(){if(!channel)return; await channel.publish('lock',{on:true, ts:Date.now()}); $('lock-mask').style.display='flex'; notif('🔒 تم إقفال سبورات الطلاب','b');}
+async function unlockAll(){if(!channel)return; await channel.publish('lock',{on:false, ts:Date.now()}); $('lock-mask').style.display='none'; notif('🔓 تم فتح السبورات','b');}
+
+// Timer
+let tmInt=null, tmRemain=0; function openCalc(){openOv('ov-calc'); $('calc-inp').focus();}
+function startTimer(){let m=parseInt($('tm-min').value||'0'), s=parseInt($('tm-sec').value||'0'); tmRemain=m*60+s; $('tm-show').textContent=formatTime(tmRemain); if(tmInt) clearInterval(tmInt); closeOv('ov-timer'); tmInt=setInterval(()=>{tmRemain--; $('tm-show').textContent=formatTime(tmRemain); if(tmRemain<=0){clearInterval(tmInt); lockAll(); notif('⏰ انتهى الوقت — تم إقفال الإجابات','r');}},1000);} function formatTime(t){const m=Math.floor(t/60), s=t%60; return `${m}:${String(s).padStart(2,'0')}`}
+
+// Board broadcast / submit
+function resizeDataURL(dataURL,maxW,maxH,q){return new Promise(res=>{const im=new Image(); im.onload=()=>{let w=im.width,h=im.height; if(w>maxW){h=Math.floor(h*(maxW/w)); w=maxW;} if(h>maxH){w=Math.floor(w*(maxH/h)); h=maxH;} const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); x.drawImage(im,0,0,w,h); res(c.toDataURL('image/jpeg', q));}; im.src=dataURL;});}
+async function broadcastBoard(){if(!channel){notif('القناة غير جاهزة','r');return;} const full=cv.toDataURL('image/jpeg',0.9); const small=await resizeDataURL(full,1000,563,0.75); try{await channel.publish('board',{img:small, ts:Date.now()}); notif('✅ تم إرسال السبورة','g');}catch(e){notif('فشل الإرسال: '+e.message,'r');}}
+async function submitWork(){if(!channel){notif('القناة غير جاهزة','r');return;} if(sLock){notif('السبورة مقفلة','r');return;} const full=scv.toDataURL('image/jpeg',0.85); const small=await resizeDataURL(full,700,394,0.65); try{await channel.publish('work',{name:MY_NAME, work:small, ts:Date.now()}); notif('✅ تم الإرسال','g');}catch(e){notif('فشل الإرسال: '+e.message,'r');}}
+
+// Drawing
+function tpos(e){const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*(cv.width/r.width), y:(e.clientY-r.top)*(cv.height/r.height)}}
+function tCanvasEvent(ev,e){ if(lock) return; if(ev==='mousedown'){ if(T.tool==='text'){placeText(e); return;} T.drawing=true; const {x,y}=tpos(e); T.sx=x; T.sy=y; T.snap=ctx.getImageData(0,0,cv.width,cv.height); ctx.beginPath(); ctx.moveTo(x,y);} else if(ev==='mousemove'){ if(!T.drawing) return; const {x,y}=tpos(e); drawStroke(ctx,T.tool,T.col,T.sz,T.sx,T.sy,x,y,T.snap);} else if(ev==='mouseup'||ev==='mouseleave'){ if(!T.drawing) return; T.drawing=false; ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over'; saveH(); updateThumb(T.curB);} }
+function spos(e){const r=scv.getBoundingClientRect(); return {x:(e.clientX-r.left)*(scv.width/r.width), y:(e.clientY-r.top)*(scv.height/r.height)}}
+function sCanvasEvent(ev,e){ if(sLock) return; if(ev==='mousedown'){ if(S.tool==='text'){stxtPlace(e); return;} S.drawing=true; const {x,y}=spos(e); S.sx=x; S.sy=y; ssnap=sctx.getImageData(0,0,scv.width,scv.height); sctx.beginPath(); sctx.moveTo(x,y);} else if(ev==='mousemove'){ if(!S.drawing) return; const {x,y}=spos(e); drawStroke(sctx,S.tool,S.col,S.sz,S.sx,S.sy,x,y,ssnap);} else if(ev==='mouseup'||ev==='mouseleave'){ if(!S.drawing) return; S.drawing=false; sctx.globalAlpha=1; sctx.globalCompositeOperation='source-over'; S.hist.push(sctx.getImageData(0,0,scv.width,scv.height)); if(S.hist.length>25) S.hist.shift(); S.redo=[];} }
+
+function drawStroke(c,tool,col,sz,sx,sy,x,y,snap){ if(tool==='pen'||tool==='marker'||tool==='eraser'){ if(tool==='eraser'){c.globalCompositeOperation='destination-out'; c.strokeStyle='rgba(0,0,0,1)';} else {c.globalCompositeOperation='source-over'; c.strokeStyle=col;} c.lineWidth=tool==='marker'?sz*3:sz; c.globalAlpha=tool==='marker'?0.45:1; c.lineCap='round'; c.lineJoin='round'; c.lineTo(x,y); c.stroke(); c.beginPath(); c.moveTo(x,y);} else { c.putImageData(snap,0,0); c.globalCompositeOperation='source-over'; c.globalAlpha=1; c.strokeStyle=col; c.lineWidth=sz; c.lineCap='round'; if(tool==='line'){c.beginPath(); c.moveTo(sx,sy); c.lineTo(x,y); c.stroke();} else if(tool==='rect'){c.strokeRect(sx,sy,x-sx,y-sy);} else if(tool==='circle'){const rx=(x-sx)/2, ry=(y-sy)/2; c.beginPath(); c.ellipse(sx+rx, sy+ry, Math.abs(rx), Math.abs(ry), 0,0,Math.PI*2); c.stroke();} else if(tool==='arrow'){drawArrow(c,sx,sy,x,y,col,sz);} } }
+function drawArrow(c,x1,y1,x2,y2,col,sz){const a=Math.atan2(y2-y1,x2-x1), s=14+sz; c.strokeStyle=col; c.lineWidth=sz; c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke(); c.beginPath(); c.moveTo(x2,y2); c.lineTo(x2-s*Math.cos(a-Math.PI/6), y2-s*Math.sin(a-Math.PI/6)); c.lineTo(x2-s*Math.cos(a+Math.PI/6), y2-s*Math.sin(a+Math.PI/6)); c.closePath(); c.fillStyle=col; c.fill(); }
+
+// Text
+let txtPos={x:0,y:0}; function placeText(e){const {x,y}=tpos(e); txtPos={x,y}; const r=cv.getBoundingClientRect(); const ov=$('txov'); ov.style.left=(x*(r.width/cv.width))+'px'; ov.style.top=(y*(r.height/cv.height))+'px'; ov.style.display='block'; $('txta').value=''; $('txta').focus();}
+function commitTxt(){const v=$('txta').value.trim(); if(v){ctx.font=`${Math.max(18,T.sz*4)}px Cairo`; ctx.fillStyle=T.col; ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over'; v.split('
+').forEach((l,i)=>ctx.fillText(l, txtPos.x, txtPos.y+i*(Math.max(18,T.sz*4)+4))); saveH(); updateThumb(T.curB);} $('txov').style.display='none';}
+let stxtPos={x:0,y:0}; function stxtPlace(e){const {x,y}=spos(e); stxtPos={x,y}; const r=scv.getBoundingClientRect(); const ov=$('stxov'); ov.style.left=(x*(r.width/scv.width))+'px'; ov.style.top=(y*(r.height/scv.height))+'px'; ov.style.display='block'; $('stxta').value=''; $('stxta').focus();}
+function commitSTxt(){const v=$('stxta').value.trim(); if(v){sctx.font=`${Math.max(18,S.sz*4)}px Cairo`; sctx.fillStyle=S.col; sctx.globalAlpha=1; sctx.globalCompositeOperation='source-over'; v.split('
+').forEach((l,i)=>sctx.fillText(l, stxtPos.x, stxtPos.y+i*(Math.max(18,S.sz*4)+4))); } $('stxov').style.display='none';}
+
+// Tools state
+function setTool(t){T.tool=t; document.querySelectorAll('#tb .tb2[id^=tt-]').forEach(b=>b.classList.remove('on')); const b=$('tt-'+t); if(b) b.classList.add('on');}
+function setCol(c){T.col=c; document.querySelectorAll('#tb .cb').forEach(b=>b.classList.toggle('on',b.dataset.c===c));}
+function setSz(v){T.sz=parseInt(v); $('szn').textContent=v;}
+function setST(t){S.tool=t; document.querySelectorAll('#s-student .tb2[id^=st-]').forEach(b=>b.classList.remove('on')); const b=$('st-'+t); if(b) b.classList.add('on');}
+function setSC(c){S.col=c; document.querySelectorAll('#s-student .cb').forEach(b=>b.classList.toggle('on',b.dataset.c===c));}
+function setSSZ(v){S.sz=parseInt(v);} function fill(c,cv,col){c.fillStyle=col; c.fillRect(0,0,cv.width,cv.height);} 
+
+// History & boards
+function saveH(){const b=T.curB; (T.hist[b]=T.hist[b]||[]).push(ctx.getImageData(0,0,cv.width,cv.height)); if(T.hist[b].length>30)T.hist[b].shift(); T.redo[b]=[];}
+function undoT(){const b=T.curB,h=T.hist[b]; if(!h?.length)return; (T.redo[b]=T.redo[b]||[]).push(ctx.getImageData(0,0,cv.width,cv.height)); ctx.putImageData(h.pop(),0,0); updateThumb(b);} 
+function redoT(){const b=T.curB,r=T.redo[b]; if(!r?.length)return; (T.hist[b]=T.hist[b]||[]).push(ctx.getImageData(0,0,cv.width,cv.height)); ctx.putImageData(r.pop(),0,0); updateThumb(b);} 
+function renderBoards(){ $('blist').innerHTML=T.boards.map((_,i)=>`<div class="bth ${i===T.curB?'cur':''}" onclick="switchB(${i})"><canvas id="th${i}" width="140" height="88"></canvas><span class="bn">${i+1}</span>${T.boards.length>1?`<button class="bdel" onclick="event.stopPropagation();delB(${i})">✕</button>`:''}</div>`).join(''); T.boards.forEach((_,i)=>drawThumb(i));}
+function drawThumb(i){const tc=$('th'+i); if(!tc)return; const tctx=tc.getContext('2d'); tctx.fillStyle='#f8f9fa'; tctx.fillRect(0,0,tc.width,tc.height); if(T.boards[i].data){const img=new Image(); img.onload=()=>tctx.drawImage(img,0,0,tc.width,tc.height); img.src=T.boards[i].data;}}
+function updateThumb(i){T.boards[i].data=cv.toDataURL('image/jpeg',.5); drawThumb(i);} 
+function switchB(i){T.boards[T.curB].data=cv.toDataURL(); T.curB=i; fill(ctx,cv,T.boards[i].bg||'#f8f9fa'); if(T.boards[i].data){const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0); img.src=T.boards[i].data;} document.querySelectorAll('.overlay').forEach(w=>w.style.display='none'); renderBoards();}
+function addBoard(){T.boards[T.curB].data=cv.toDataURL(); T.boards.push({name:'سبورة '+(T.boards.length+1), data:null, bg:'#f8f9fa'}); T.hist.push([]); T.redo.push([]); switchB(T.boards.length-1);} 
+function delB(i){if(T.boards.length===1)return; T.boards.splice(i,1); T.hist.splice(i,1); T.redo.splice(i,1); T.curB=Math.max(0,Math.min(T.curB,T.boards.length-1)); switchB(T.curB);} 
+function clearBoard(){if(!confirm('مسح السبورة؟'))return; fill(ctx,cv,'#f8f9fa'); document.querySelectorAll('.overlay').forEach(w=>w.style.display='none'); saveH(); updateThumb(T.curB);} 
+function saveBoard(){const a=document.createElement('a'); a.download='board.png'; a.href=cv.toDataURL(); a.click(); notif('تم الحفظ ✅','g');}
+
+// Media
+function handleImg(e){const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{const img=new Image(); img.onload=()=>{const sc=Math.min((cv.width-80)/img.width,(cv.height-80)/img.height,1); ctx.drawImage(img,40,40,img.width*sc,img.height*sc); updateThumb(T.curB); }; img.src=ev.target.result;}; r.readAsDataURL(f); e.target.value='';}
+function handleSImg(e){const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{const img=new Image(); img.onload=()=>{const sc=Math.min(400/img.width,300/img.height,1); sctx.drawImage(img,40,40,img.width*sc,img.height*sc);} ; img.src=ev.target.result;}; r.readAsDataURL(f); e.target.value=''; notif('✅ تم رفع الصورة','g');}
+
+// PDF
+async function handlePDF(e){const f=e.target.files[0]; if(!f)return; const pg=$('pdfprog'); pg.textContent='جارٍ القراءة...'; const buf=await f.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:buf}).promise; const n=pdf.numPages; for(let i=1;i<=n;i++){ pg.textContent=`صفحة ${i} من ${n}`; const page=await pdf.getPage(i); const vp=page.getViewport({scale:1.4}); const oc=document.createElement('canvas'); oc.width=vp.width; oc.height=vp.height; await page.render({canvasContext:oc.getContext('2d'),viewport:vp}).promise; const dataURL=oc.toDataURL('image/jpeg',.88); if(i===1){ ctx.clearRect(0,0,cv.width,cv.height); fill(ctx,cv,'#fff'); const img=new Image(); img.onload=()=>{ctx.drawImage(img,0,0,Math.min(cv.width,img.width),Math.min(cv.height,img.height)); saveH(); updateThumb(T.curB);} ; img.src=dataURL;} else { T.boards.push({name:`صفحة ${i}`, data:dataURL, bg:'#fff'}); T.hist.push([]); T.redo.push([]);} } renderBoards(); closeOv('ov-pdf'); notif(`✅ تم تحميل ${n} صفحة`,'g'); e.target.value='';}
+
+// Geometry Tools (simple canvas overlays)
+function makeDrag(el){let ox,oy,drag=false; el.addEventListener('mousedown',e=>{ if(e.target.classList.contains('wcls')) return; drag=true; const r=el.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; el.style.zIndex=99; e.preventDefault();}); document.addEventListener('mousemove',e=>{if(!drag)return; const pr=el.parentElement.getBoundingClientRect(); el.style.left=(e.clientX-pr.left-ox)+'px'; el.style.top=(e.clientY-pr.top-oy)+'px';}); document.addEventListener('mouseup',()=>{drag=false; el.style.zIndex=40;});}
+function toggleRuler(){const d=$('ruler-ov'); d.style.display=d.style.display==='none'?'block':'none'; makeDrag(d);} 
+function toggleProtractor(){const d=$('prot-ov'); d.style.display=d.style.display==='none'?'block':'none'; makeDrag(d);} 
+function toggleGrid(){const g=$('grid-ov'); g.style.display=g.style.display==='none'?'block':'none';}
+function drawRuler(){const c=$('ruler-cv'); const x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.strokeStyle='#111'; x.beginPath(); x.moveTo(0,0); x.lineTo(c.width,0); x.lineTo(c.width,c.height); x.lineTo(0,c.height); x.closePath(); x.stroke(); x.fillStyle='#111'; for(let i=0;i<=c.width;i+=10){ const h=(i%50===0)?18:(i%20===0)?12:8; x.beginPath(); x.moveTo(i,0); x.lineTo(i,h); x.stroke(); if(i%50===0){ x.fillText(String(i), i+2, 26);} } }
+function drawProtractor(){const c=$('prot-cv'); const x=c.getContext('2d'); const w=c.width,h=c.height; x.clearRect(0,0,w,h); x.fillStyle='rgba(255,255,255,.95)'; x.strokeStyle='#111'; x.lineWidth=1; x.beginPath(); x.arc(w/2,h, h-4, Math.PI, 2*Math.PI); x.lineTo(w/2, h); x.closePath(); x.fill(); x.stroke(); x.fillStyle='#111'; for(let deg=0; deg<=180; deg+=10){ const rad=(Math.PI*deg/180); const r=h-6; const x1=w/2 + (r-10)*Math.cos(Math.PI-rad); const y1=h - (r-10)*Math.sin(Math.PI-rad); const x2=w/2 + r*Math.cos(Math.PI-rad); const y2=h - r*Math.sin(Math.PI-rad); x.beginPath(); x.moveTo(x1,y1); x.lineTo(x2,y2); x.stroke(); if(deg%30===0){ const xt=w/2 + (r-24)*Math.cos(Math.PI-rad); const yt=h - (r-24)*Math.sin(Math.PI-rad); x.fillText(String(deg), xt-6, yt+4);} }
+}
+function drawGrid(){const g=$('grid-ov'); const x=g.getContext('2d'); x.clearRect(0,0,g.width,g.height); x.strokeStyle='#000'; for(let i=0;i<g.width;i+=40){ x.globalAlpha=0.25; x.beginPath(); x.moveTo(i,0); x.lineTo(i,g.height); x.stroke(); } for(let j=0;j<g.height;j+=40){ x.globalAlpha=0.25; x.beginPath(); x.moveTo(0,j); x.lineTo(g.width,j); x.stroke(); } }
+
+// Calculator
+function insCalc(t){const el=$('calc-inp'); el.value+=t; el.focus();}
+function evalCalc(){try{ const expr=$('calc-inp').value.replace(/\^/g,'**'); const sin=(v)=>Math.sin(v), cos=(v)=>Math.cos(v), tan=(v)=>Math.tan(v), sqrt=(v)=>Math.sqrt(v); const res=Function('sin','cos','tan','sqrt',`return (${expr})`)(sin,cos,tan,sqrt); $('calc-inp').value=String(res); }catch{ notif('تعبير غير صالح','r'); }}
+
+// Excel export (SheetJS)
+function exportExcel(){ const rows=[["الاسم","متصل","أرسل؟","وقت الإرسال","الدرجة"]]; for(const [name, rec] of studentMap){ rows.push([name, rec.online?"نعم":"لا", rec.work?"نعم":"لا", rec.submittedAt||"", rec.grade??""]); } const wb=XLSX.utils.book_new(); const ws=XLSX.utils.aoa_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws, "الحالة"); XLSX.writeFile(wb, `سجل_الدرس_${ROOM}.xlsx`); notif('📊 تم تصدير Excel','g'); }
+
+// UI utils
+function go(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on')); $(id).classList.add('on');}
+function openOv(id){$(id).classList.add('on');}
+function closeOv(id){$(id).classList.remove('on');}
+function notif(msg,type='b'){const n=$('notif'); n.textContent=msg; n.className='notif up '+type; setTimeout(()=>n.classList.remove('up'),3500);} 
+</script>
+</body>
+</html>
